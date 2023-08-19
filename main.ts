@@ -37,20 +37,18 @@ cron("* * * * *", async () => {
 db.set("test", "OK");
 
 router.get("/", (ctx: Context) => {
-  console.log(`Request from ${ctx.request.url}`);
   const samples = ["btc", "eth", "usdt", "test"];
   ctx.response.status = Status.OK;
   ctx.response.type = "json";
   ctx.response.body = {
     message: "for each coin data you can check like on url below",
-    data: samples.map((sample) => `${ctx.request.url}/${sample}`),
+    data: samples.map((sample) => `${ctx.request.url}${sample}`),
   };
 });
 
 router.get("/:coin", (ctx: Context) => {
   const { coin } = helpers.getQuery(ctx, { mergeParams: true });
   const result = db.get(coin);
-  console.log(result);
   if (!result) {
     ctx.response.status = Status.NotFound;
     ctx.response.type = "json";
