@@ -1,5 +1,5 @@
 # Laprisaurus
-Trying new Deno Serveress Platform known as [Deno Deploy][deno-deploy-url] to map [Indodax Ticker API][indodax-ticker-url] with simple key value store using [JS Map][js-map-url].
+Trying new Deno Serverless Platform known as [Deno Deploy][deno-deploy-url] to map [Indodax Ticker API][indodax-ticker-url] with simple key value store using [JS Map][js-map-url].
 
 ## TODO
 - Can't wait to use official [DenoKV][deno-kv-url] as the key value store database instead of using JS Map lol.
