@@ -1,5 +1,4 @@
 import { Status } from "https://deno.land/std@0.193.0/http/http_status.ts";
-import { getLogger } from "https://deno.land/std@0.198.0/log/mod.ts";
 import axiod from "https://deno.land/x/axiod@0.26.2/mod.ts";
 import { cron } from "https://deno.land/x/deno_cron@v1.0.0/cron.ts";
 import {
@@ -11,7 +10,6 @@ import {
 
 const app = new Application();
 const router = new Router();
-const logger = getLogger("lapisaurus");
 const db = new Map();
 
 type Entries<T> = {
@@ -24,7 +22,7 @@ type IndodaxResponse = {
   };
 };
 
-cron("*/15 * * * *", async () => {
+cron("* * * * *", async () => {
   const response = await axiod.get("https://indodax.com/api/ticker_all");
   const tickers: Entries<IndodaxResponse> = Object.entries(
     response.data.tickers
@@ -36,28 +34,36 @@ cron("*/15 * * * *", async () => {
     }
   }
 });
+db.set("test", "OK");
 
 router.get("/", (ctx: Context) => {
-  logger.debug(`Request from ${ctx.request.url}`);
+  console.log(`Request from ${ctx.request.url}`);
+  const samples = ["btc", "eth", "usdt", "test"];
   ctx.response.status = Status.OK;
   ctx.response.type = "json";
-  ctx.response.body = { message: "Hello World" };
+  ctx.response.body = {
+    message: "for each coin data you can check like on url below",
+    data: samples.map((sample) => `${ctx.request.url}/${sample}`),
+  };
 });
 
 router.get("/:coin", (ctx: Context) => {
   const { coin } = helpers.getQuery(ctx, { mergeParams: true });
   const result = db.get(coin);
+  console.log(result);
   if (!result) {
     ctx.response.status = Status.NotFound;
     ctx.response.type = "json";
     ctx.response.body = {
       message: "Coin not found",
     };
+    return;
   }
 
   ctx.response.status = Status.OK;
   ctx.response.type = "json";
   ctx.response.body = {
+    symbol: coin,
     price: result,
   };
 });
@@ -65,18 +71,5 @@ router.get("/:coin", (ctx: Context) => {
 app.use(router.routes());
 app.use(router.allowedMethods());
 
-// await app.listen({ port: 8000 });
-const listener = Deno.listen({ port: 8000 });
-logger.debug("Listening on http://localhost:8000");
-
-for await (const conn of listener) {
-  async () => {
-    const requests = Deno.serveHttp(conn);
-    for await (const { request, respondWith } of requests) {
-      const response = await app.handle(request, conn);
-      if (response) {
-        respondWith(response);
-      }
-    }
-  };
-}
+await app.listen({ port: 8000 });
+console.log("Listening on http://localhost:8000");
