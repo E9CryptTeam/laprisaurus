@@ -8,9 +8,9 @@ import {
   Router,
 } from "https://deno.land/x/oak@v12.6.0/mod.ts";
 
-const app = new Application();
-const router = new Router();
-const db = new Map();
+export const app = new Application();
+export const router = new Router();
+export const db = new Map();
 
 type Entries<T> = {
   [K in keyof T]: [K, T[K]];
@@ -41,7 +41,8 @@ router.get("/", (ctx: Context) => {
   ctx.response.status = Status.OK;
   ctx.response.type = "json";
   ctx.response.body = {
-    message: "for each coin data you can check like on url below",
+    message: "For each coin price you can check like on url below",
+    erro: null,
     data: samples.map((sample) => `${ctx.request.url}${sample}`),
   };
 });
@@ -54,6 +55,8 @@ router.get("/:coin", (ctx: Context) => {
     ctx.response.type = "json";
     ctx.response.body = {
       message: "Coin not found",
+      error: "Not Found",
+      data: null,
     };
     return;
   }
@@ -61,8 +64,12 @@ router.get("/:coin", (ctx: Context) => {
   ctx.response.status = Status.OK;
   ctx.response.type = "json";
   ctx.response.body = {
-    symbol: coin,
-    price: result,
+    message: "Get coin by coin name",
+    error: null,
+    data: {
+      symbol: coin,
+      price: result,
+    },
   };
 });
 
@@ -70,4 +77,3 @@ app.use(router.routes());
 app.use(router.allowedMethods());
 
 await app.listen({ port: 8000 });
-console.log("Listening on http://localhost:8000");
