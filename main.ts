@@ -1,12 +1,17 @@
+import { Status } from "https://deno.land/std@0.193.0/http/http_status.ts";
+import { getLogger } from "https://deno.land/std@0.198.0/log/mod.ts";
+import axiod from "https://deno.land/x/axiod@0.26.2/mod.ts";
+import { cron } from "https://deno.land/x/deno_cron@v1.0.0/cron.ts";
 import {
   Application,
   Context,
+  helpers,
   Router,
 } from "https://deno.land/x/oak@v12.6.0/mod.ts";
-import { errors } from "https://deno.land/std@0.198.0/http/http_errors.ts";
-import { cron } from "https://deno.land/x/deno_cron@v1.0.0/cron.ts";
-import axiod from "https://deno.land/x/axiod@0.26.2/mod.ts";
 
+const app = new Application();
+const router = new Router();
+const logger = getLogger("lapisaurus");
 const db = new Map();
 
 type Entries<T> = {
@@ -32,18 +37,46 @@ cron("*/15 * * * *", async () => {
   }
 });
 
-const app = new Application();
-const router = new Router();
+router.get("/", (ctx: Context) => {
+  logger.debug(`Request from ${ctx.request.url}`);
+  ctx.response.status = Status.OK;
+  ctx.response.type = "json";
+  ctx.response.body = { message: "Hello World" };
+});
 
 router.get("/:coin", (ctx: Context) => {
-  const coin = ctx.request.url.searchParams.get("coin");
+  const { coin } = helpers.getQuery(ctx, { mergeParams: true });
   const result = db.get(coin);
-  if (!result) return new errors.NotFound("coin name not found");
+  if (!result) {
+    ctx.response.status = Status.NotFound;
+    ctx.response.type = "json";
+    ctx.response.body = {
+      message: "Coin not found",
+    };
+  }
 
-  return new Response(result);
+  ctx.response.status = Status.OK;
+  ctx.response.type = "json";
+  ctx.response.body = {
+    price: result,
+  };
 });
 
 app.use(router.routes());
 app.use(router.allowedMethods());
 
-app.listen({ port: 8080 });
+// await app.listen({ port: 8000 });
+const listener = Deno.listen({ port: 8000 });
+logger.debug("Listening on http://localhost:8000");
+
+for await (const conn of listener) {
+  async () => {
+    const requests = Deno.serveHttp(conn);
+    for await (const { request, respondWith } of requests) {
+      const response = await app.handle(request, conn);
+      if (response) {
+        respondWith(response);
+      }
+    }
+  };
+}
