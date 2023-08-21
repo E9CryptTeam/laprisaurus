@@ -64,12 +64,8 @@ router.get("/:coin", (ctx: Context) => {
   ctx.response.status = Status.OK;
   ctx.response.type = "json";
   ctx.response.body = {
-    message: "Get coin by coin name",
-    error: null,
-    data: {
-      symbol: coin,
-      price: result,
-    },
+    symbol: coin,
+    price: result,
   };
 });
 
